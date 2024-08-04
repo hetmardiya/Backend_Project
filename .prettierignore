@@ -1,0 +1,11 @@
+/node_modules
+/.vscode
+./dist
+
+.env
+*.env
+.env*
+
+.gitignore
+package.json
+package-lock.json
