@@ -58,7 +58,7 @@ UserSchema.pre("save", function (next) {
     next()
  })
 
-UserSchema.methods.passwordCurrection = async function(password) {
+UserSchema.methods.passwordCurrection = async function(password) {                     //custom method
     return await bcrypt.compare(password , this.password)
 }
 
