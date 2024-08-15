@@ -10,7 +10,15 @@ app.use(cors({
 }))
                                                                  //THESE FOUR LINE ARE BASICALLY FOR CONFIGURE THE THINGS WHICH IS USE IN PROJECT
 app.use(express.json({limit:"16kb"}))                            //comes input in json format so it is for that with 16kb limit
-app.use(express.urlencoded({limit:"16kb", extends:true}))        //comes input in url format so it is for that with 16kb limit
+app.use(express.urlencoded({limit:"16kb" , extended:true}))        //comes input in url format so it is for that with 16kb limit
 app.use(express.static("public"))                                //the static path of public folder when any thing you want to store in so
 app.use(cookieParser())                                          //this is for configure cookie
+
+// import routes
+import router from './routes/user.routes.js';
+
+// routes declaration
+app.use("/api/v1/users" , router)
+
+
 export { app }
