@@ -13,7 +13,7 @@ const registerUser = asyncHandlers (async (req,res)=>{
         throw new ApiError(400 , "All Fields Are Required")
     }
     
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{username},{email}]
     })
     if(existedUser){
@@ -21,9 +21,13 @@ const registerUser = asyncHandlers (async (req,res)=>{
     }
 
     const avtarLocalPath = req.files?.avtar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
     if(!avtarLocalPath){
         throw new ApiError(400 , "avtar image is required")
+    }
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path
     }
 
     const avtar = await uploadCloudinary(avtarLocalPath)

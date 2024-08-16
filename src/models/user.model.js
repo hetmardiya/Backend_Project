@@ -1,4 +1,4 @@
-import { type } from 'express/lib/response';
+// import { type } from 'express/lib/response';
 import { mongoose , Schema } from 'mongoose';
 import jsonwebtoken from 'jsonwebtoken';
 import bcrypt from 'bcrypt'
