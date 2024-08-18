@@ -1,9 +1,9 @@
-import {asyncHandlers} from '../utils/asyncHandlers.js'
-import {ApiError} from '../utils/API_Errors.js'
-import {User} from '../models/user.model.js'
-import {uploadCloudinary} from '../utils/cloudinary.js'
+import jwt from 'jsonwebtoken'
+import { User } from '../models/user.model.js'
+import { ApiError } from '../utils/API_Errors.js'
 import { Api_Response } from '../utils/API_Response.js'
-
+import { asyncHandlers } from '../utils/asyncHandlers.js'
+import { uploadCloudinary } from '../utils/cloudinary.js'
 const generatesAccessAndRefreshTocken = async(userId)=>{
     try {
         const user = await User.findById(userId)
@@ -75,7 +75,7 @@ const registerUser = asyncHandlers (async (req,res)=>{
 const loginUser = asyncHandlers(async (req,res) =>{
     const {email , username , password} = req.body
 
-    if(!(email || username)){
+    if(!username && !email){
         throw new ApiError(400 , "email or password is required")
     }
 
@@ -133,8 +133,58 @@ const logOutUser = asyncHandlers(async (req,res)=>{
     return res.status(200).clearCookie("accessToken" , options).clearCookie("refreshToken" , options).json(new Api_Response(200 , {} ,"user logged out") )
 })
 
+const refreshAccessToken = asyncHandlers(async(req,res)=>{
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if(!incomingRefreshToken){
+        throw new ApiError(401 , "unauthorized request")
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+    
+        const user = await User.findById(decodedToken?._id)
+        if (!user) {
+            throw new ApiError(401 , "invalid refresh token")
+        }
+    
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401 , "expired refresh token")
+        }
+    
+        const option = {
+            http: true,
+            secure: true
+        }
+        const {accessToken , newRefreshToken} = await generatesAccessAndRefreshTocken(user._id)
+    
+        return res.status(200).cookie("accessToken" , accessToken , option).cookie("refreshToken" , newRefreshToken , option).json( new Api_Response(200 , {accessToken , refreshToken: newRefreshToken} , "access token refresh"))
+    } catch (error) {
+        throw new ApiError(401 , error?.message || "invalid refresh token")
+    }
+})
+
+const changeCurrentPassword = asyncHandlers(async (req,res)=>{
+    const {oldPassword , newPassword} = req.body
+
+    const user = await User.findById(req.user?._id)
+    const isPasswordCorrect = await user.passwordCurrection(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400 , "invalid old password")
+    }
+
+    user.password = newPassword
+    await user.save({validateBeforeSave: false})
+
+    return res.status(200).json(new Api_Response(200 , {} , "password changed successfully"))
+})
+
 export {
-    registerUser,
-    loginUser ,
-    logOutUser
-} 
+    loginUser,
+    logOutUser, registerUser,refreshAccessToken
+}
+ 
